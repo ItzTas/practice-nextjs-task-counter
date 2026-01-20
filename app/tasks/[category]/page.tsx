@@ -1,6 +1,11 @@
-import TaskCard from "@/components/TaskCard";
+"use client";
 
-const tasks = [
+import { Task } from "@/app/types/Task";
+import AddTaskForm from "@/components/AddTask";
+import TaskCard from "@/components/TaskCard";
+import { useActionState, useState } from "react";
+
+const initialTasks: Task[] = [
   {
     taskID: 1,
     name: "Lavar a louça",
@@ -24,11 +29,40 @@ const tasks = [
 ];
 
 export default function Tasks() {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  function addTask(prevData: Task, formData: FormData) {
+    const description = formData.get("description")?.toString();
+    if (!description) {
+      alert("Por favor insira uma descrição");
+      return;
+    }
+    const name = formData.get("name")?.toString();
+    if (!name) {
+      alert("Por favor insira uma descrição");
+      return;
+    }
+
+    const newTask: Task = {
+      taskID: tasks.length + 1,
+      description: description,
+      name: name,
+    };
+
+    const tasksCopy: Task[] = [...tasks, newTask];
+    return tasksCopy;
+  }
+
+  const [state, addAction, isAdding] = useActionState<Task[]>(addTask, tasks);
+
   return (
-    <div className="flex flex-col gap-4">
-      {tasks.map((task) => (
-        <TaskCard key={task.taskID} {...task} />
-      ))}
-    </div>
+    <>
+      <AddTaskForm isPending={isAdding} action={addAction} />{" "}
+      <div className="flex flex-col gap-5 items-center md:flex-row md:flex-wrap md:justify-center">
+        {state.map((task) => (
+          <TaskCard key={task.taskID} {...task} />
+        ))}
+      </div>
+    </>
   );
 }

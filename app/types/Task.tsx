@@ -1,7 +1,7 @@
 interface Task {
-  id: number;
+  taskID: number;
   name: string;
-  Description: string;
+  description: string;
 }
 
 export type { Task };
