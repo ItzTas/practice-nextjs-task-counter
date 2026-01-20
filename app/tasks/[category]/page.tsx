@@ -33,8 +33,8 @@ export default function Tasks({ params }: Props) {
   }, [tasks, keyname, isMounted]);
 
   function addTask(formData: FormData) {
-    const name = formData.get("name")?.toString();
-    const description = formData.get("description")?.toString();
+    const name = formData.get("name")?.toString().trim();
+    const description = formData.get("description")?.toString().trim();
     if (!name || !description) {
       alert("Por favor preencha nome e descrição");
       return;
