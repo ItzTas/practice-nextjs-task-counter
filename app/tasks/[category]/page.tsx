@@ -1,66 +1,78 @@
 "use client";
-
 import { Task } from "@/app/types/Task";
 import AddTaskForm from "@/components/AddTask";
 import TaskCard from "@/components/TaskCard";
-import { useActionState, useState } from "react";
+import { use, useEffect, useState, useTransition } from "react";
 
-const initialTasks: Task[] = [
-  {
-    taskID: 1,
-    name: "Lavar a louça",
-    description: "Lavar os pratos, copos e panelas do almoço.",
-  },
-  {
-    taskID: 2,
-    name: "Estudar Next.js",
-    description: "Terminar a aula do Boot.dev e criar um componente novo.",
-  },
-  {
-    taskID: 3,
-    name: "Fazer exercício",
-    description: "Treino rápido de 20 minutos em casa.",
-  },
-  {
-    taskID: 4,
-    name: "Ler um capítulo",
-    description: "Ler pelo menos 10 páginas de qualquer livro.",
-  },
-];
+type Props = {
+  params: Promise<{ category: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-export default function Tasks() {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+export default function Tasks({ params }: Props) {
+  const { category } = use(params);
+  const keyname = `tasks_${category}`;
 
-  function addTask(prevData: Task, formData: FormData) {
-    const description = formData.get("description")?.toString();
-    if (!description) {
-      alert("Por favor insira uma descrição");
-      return;
+  const [isPending, startTransition] = useTransition();
+  const [isMounted, setIsMounted] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    const localTasksStr = localStorage.getItem(keyname);
+    if (localTasksStr) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTasks(JSON.parse(localTasksStr));
     }
+    setIsMounted(true);
+  }, [keyname]);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem(keyname, JSON.stringify(tasks));
+    }
+  }, [tasks, keyname, isMounted]);
+
+  function addTask(formData: FormData) {
     const name = formData.get("name")?.toString();
-    if (!name) {
-      alert("Por favor insira uma descrição");
+    const description = formData.get("description")?.toString();
+    if (!name || !description) {
+      alert("Por favor preencha nome e descrição");
       return;
     }
-
-    const newTask: Task = {
-      taskID: tasks.length + 1,
-      description: description,
-      name: name,
-    };
-
-    const tasksCopy: Task[] = [...tasks, newTask];
-    return tasksCopy;
+    setTasks((prev) => [...prev, { name, description }]);
   }
 
-  const [state, addAction, isAdding] = useActionState<Task[]>(addTask, tasks);
+  function onTaskDelete(i: number) {
+    startTransition(() => {
+      setTasks((prev) => {
+        const tasksCopy = [...prev];
+        tasksCopy.splice(i, 1);
+        return tasksCopy;
+      });
+    });
+  }
+
+  // Não renderiza nada até montar no cliente
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>
-      <AddTaskForm isPending={isAdding} action={addAction} />{" "}
+      <AddTaskForm
+        isPending={isPending}
+        action={(formData: FormData) =>
+          startTransition(() => addTask(formData))
+        }
+      />
       <div className="flex flex-col gap-5 items-center md:flex-row md:flex-wrap md:justify-center">
-        {state.map((task) => (
-          <TaskCard key={task.taskID} {...task} />
+        {tasks.map((task, i) => (
+          <TaskCard
+            taskID={i + 1}
+            onDelete={() => onTaskDelete(i)}
+            key={i}
+            {...task}
+          />
         ))}
       </div>
     </>

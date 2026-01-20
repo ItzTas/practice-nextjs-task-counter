@@ -8,7 +8,7 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
   taskID: number;
   name: string;
   description: string;
-  onDelete: (arg0: number) => void;
+  onDelete: (arg0?: number) => void;
 }
 
 export default function TaskCard({
