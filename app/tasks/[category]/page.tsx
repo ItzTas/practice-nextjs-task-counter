@@ -1,4 +1,5 @@
 "use client";
+
 import { Task } from "@/app/types/Task";
 import AddTaskForm from "@/components/AddTask";
 import TaskCard from "@/components/TaskCard";
